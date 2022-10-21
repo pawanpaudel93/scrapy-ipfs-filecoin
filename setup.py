@@ -6,7 +6,7 @@ from shutil import rmtree
 from setuptools import Command, find_packages, setup
 
 # Package meta-data.
-NAME = "scrapy-ipfs-filecoin-exporter"
+NAME = "scrapy_ipfs_filecoin_exporter"
 DESCRIPTION = "A scrapy ipfs filecoin exporter"
 URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin-exporter"
 EMAIL = "pawanpaudel93@gmail.com"
@@ -88,10 +88,10 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    py_modules=["scrapy-ipfs-filecoin-exporter"],
+    py_modules=["scrapy_ipfs_filecoin_exporter"],
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    packages=["scrapy-ipfs-filecoin-exporter"],
+    packages=["scrapy_ipfs_filecoin_exporter"],
     include_package_data=True,
     license="ISC",
     classifiers=[
