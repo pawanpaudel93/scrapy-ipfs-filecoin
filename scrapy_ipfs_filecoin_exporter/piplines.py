@@ -3,6 +3,7 @@ import hashlib
 import logging
 import mimetypes
 import os
+import time
 import warnings
 from collections import defaultdict
 from contextlib import suppress
@@ -30,7 +31,6 @@ class FileException(Exception):
 
 class W3SFileStore:
     API_KEY = None
-    BASE_URL = "https://w3s.link/ipfs/"
     cids = {}
 
     def __init__(self, basedir):
@@ -60,7 +60,7 @@ class W3SFileStore:
 
         cid = self.ws_client.cid_hash(absolute_path)
         headers = self._get_response_headers(cid)
-        if not headers.get("ETag"):
+        if not headers.get("Content-Disposition"):
             return {}
 
         return {'cid': cid}
@@ -78,8 +78,8 @@ class W3SFileStore:
 
     def _get_response_headers(self, cid):
         try:
-            with requests.get(self.BASE_URL + cid, stream=True, timeout=2) as r:
-                return r.headers
+            response = self.ws_client.session.head(f"{self.ws_client.BASE_URL}/car/{cid}", timeout=3)
+            return response.headers
         except:
             return {}
 
@@ -157,7 +157,7 @@ class FilesPipeline(MediaPipeline):
             self.inc_stats(info.spider, 'uptodate')
 
             cid = result.get('cid', None)
-            return {'url': request.url, 'path': path, 'cid': cid, 'status': 'uptodate'}
+            return {'url': request.url, 'path': path, 'cid': cid}
 
         path = self.file_path(request, info=info, item=item)
         dfd = defer.maybeDeferred(self.store.stat_file, path, info)
@@ -230,7 +230,7 @@ class FilesPipeline(MediaPipeline):
             )
             raise FileException(str(exc))
 
-        return {'url': request.url, 'path': path, 'cid': cid, 'status': status}
+        return {'url': request.url, 'path': path, 'cid': cid}
 
     def inc_stats(self, spider, status):
         spider.crawler.stats.inc_value('file_count', spider=spider)
