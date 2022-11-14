@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 requests = "*"
 scrapy = "*"
+twisted = "*"
+pillow = "*"
 
 [dev-packages]
 black = "*"
