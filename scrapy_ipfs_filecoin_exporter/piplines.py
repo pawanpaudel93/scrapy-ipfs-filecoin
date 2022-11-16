@@ -3,18 +3,17 @@ import hashlib
 import logging
 import mimetypes
 import os
-import time
 import warnings
-from collections import defaultdict
 from contextlib import suppress
 from io import BytesIO
 from urllib.parse import urlparse
 
 import requests
 from itemadapter import ItemAdapter
-from scrapy.exceptions import DropItem, IgnoreRequest, NotConfigured, ScrapyDeprecationWarning
+from scrapy.exceptions import IgnoreRequest, NotConfigured, ScrapyDeprecationWarning
 from scrapy.http import Request
-from scrapy.pipelines.files import FileException
+from scrapy.pipelines.files import FileException, FSFilesStore, FileException
+from scrapy.pipelines.images import ImageException
 from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
 from scrapy.utils.log import failure_to_exc_info
@@ -25,24 +24,15 @@ from twisted.internet import defer, threads
 logger = logging.getLogger(__name__)
 
 
-class FileException(Exception):
-    """General media error exception"""
-
-
-class W3SFileStore:
+class W3SFilesStore(FSFilesStore):
     API_KEY = None
     cids = {}
 
     def __init__(self, basedir):
         from .client import W3SClient
 
-        if '://' in basedir:
-            basedir = basedir.split('://', 1)[1]
-        self.basedir = basedir
-        self._mkdir(self.basedir)
-        self.created_directories = defaultdict(set)
-
-        self.ws_client = W3SClient(self.API_KEY)
+        super().__init__(basedir)
+        self.client = W3SClient(self.API_KEY)
 
     def persist_file(self, path, buf, info, meta=None, headers=None):
         absolute_path = self._get_filesystem_path(path)
@@ -50,36 +40,105 @@ class W3SFileStore:
         with open(absolute_path, 'wb') as f:
             f.write(buf.getvalue())
         filename = path.split("/")[-1]
-        self.cids[path] = self.ws_client.cid_hash(absolute_path)
-        return threads.deferToThread(self.ws_client.upload, name=filename, files=[buf.getvalue()])
+        self.cids[path] = self.client.cid_hash(absolute_path)
+        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
         if not os.path.exists(absolute_path):
             return {}
 
-        cid = self.ws_client.cid_hash(absolute_path)
+        cid = self.client.cid_hash(absolute_path)
         headers = self._get_response_headers(cid)
         if not headers.get("Content-Disposition"):
             return {}
 
         return {'cid': cid}
 
-    def _get_filesystem_path(self, path):
-        path_comps = path.split('/')
-        return os.path.join(self.basedir, *path_comps)
+    def _get_response_headers(self, cid):
+        try:
+            response = self.client.session.head(f"https://api.web3.storage/upload/car/{cid}", timeout=3)
+            return response.headers if response.ok else {}
+        except:
+            return {}
 
-    def _mkdir(self, dirname, domain=None):
-        seen = self.created_directories[domain] if domain else set()
-        if dirname not in seen:
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            seen.add(dirname)
+
+class EstuaryFilesStore(FSFilesStore):
+    API_KEY = None
+    cids = {}
+
+    def __init__(self, basedir):
+        from .client import EstuaryClient
+
+        super().__init__(basedir)
+        self.client = EstuaryClient(self.API_KEY)
+
+    def persist_file(self, path, buf, info, meta=None, headers=None):
+        absolute_path = self._get_filesystem_path(path)
+        self._mkdir(os.path.dirname(absolute_path), info)
+        with open(absolute_path, 'wb') as f:
+            f.write(buf.getvalue())
+        filename = path.split("/")[-1]
+        self.cids[path] = self.client.cid_hash(absolute_path)
+        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
+
+    def stat_file(self, path, info):
+        absolute_path = self._get_filesystem_path(path)
+        if not os.path.exists(absolute_path):
+            return {}
+
+        cid = self.client.cid_hash(absolute_path)
+        headers = self._get_response_headers(cid)
+        if not headers.get("Content-Length"):
+            return {}
+        elif headers.get("Content-Length") and int(headers.get("Content-Length")) == 0:
+            return {}
+
+        return {'cid': cid}
 
     def _get_response_headers(self, cid):
         try:
-            response = self.ws_client.session.head(f"{self.ws_client.BASE_URL}/car/{cid}", timeout=3)
-            return response.headers
+            response = self.client.session.get(f"https://api.estuary.tech/gw/ipfs/{cid}", stream=True, timeout=3)
+            return response.headers if response.ok else {}
+        except:
+            return {}
+
+
+class LightHouseFilesStore(FSFilesStore):
+    API_KEY = None
+    cids = {}
+
+    def __init__(self, basedir):
+        from .client import LightHouseClient
+
+        super().__init__(basedir)
+        self.client = LightHouseClient(self.API_KEY)
+
+    def persist_file(self, path, buf, info, meta=None, headers=None):
+        absolute_path = self._get_filesystem_path(path)
+        self._mkdir(os.path.dirname(absolute_path), info)
+        with open(absolute_path, 'wb') as f:
+            f.write(buf.getvalue())
+        filename = path.split("/")[-1]
+        self.cids[path] = self.client.cid_hash(absolute_path, 0)
+        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
+
+    def stat_file(self, path, info):
+        absolute_path = self._get_filesystem_path(path)
+        if not os.path.exists(absolute_path):
+            return {}
+
+        cid = self.client.cid_hash(absolute_path)
+        headers = self._get_response_headers(cid)
+        if not headers.get("Etag") or not headers.get("etag"):
+            return {}
+
+        return {'cid': cid}
+
+    def _get_response_headers(self, cid):
+        try:
+            response = requests.head(f"https://gateway.lighthouse.storage/ipfs/{cid}", timeout=3)
+            return response.headers if response.ok else {}
         except:
             return {}
 
@@ -100,10 +159,7 @@ class FilesPipeline(MediaPipeline):
 
     MEDIA_NAME = "file"
     EXPIRES = 90
-    STORE_SCHEMES = {
-        '': W3SFileStore,
-        'w3s': W3SFileStore,
-    }
+    STORE_SCHEMES = {'': W3SFilesStore, 'w3s': W3SFilesStore, 'lh': LightHouseFilesStore, 'es': EstuaryFilesStore}
     DEFAULT_FILES_URLS_FIELD = 'file_urls'
     DEFAULT_FILES_RESULT_FIELD = 'files'
 
@@ -129,14 +185,19 @@ class FilesPipeline(MediaPipeline):
     @classmethod
     def from_settings(cls, settings):
         w3s_store = cls.STORE_SCHEMES['w3s']
-        w3s_store.API_KEY = settings['W3_API_KEY']
+        w3s_store.API_KEY = settings['W3S_API_KEY']
+
+        lh_store = cls.STORE_SCHEMES['lh']
+        lh_store.API_KEY = settings['LH_API_KEY']
+
+        es_store = cls.STORE_SCHEMES['es']
+        es_store.API_KEY = settings['ES_API_KEY']
 
         store_uri = settings['FILES_STORE']
         return cls(store_uri, settings=settings)
 
     def _get_store(self, uri):
         if os.path.isabs(uri):  # to support win32 paths like: C:\\some\dir
-            # scheme = 'file'
             scheme = "w3s"
         else:
             scheme = urlparse(uri).scheme
@@ -266,18 +327,6 @@ class FilesPipeline(MediaPipeline):
         return f'full/{media_guid}{media_ext}'
 
 
-class NoimagesDrop(DropItem):
-    """Product with no images exception"""
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The NoimagesDrop class is deprecated", category=ScrapyDeprecationWarning, stacklevel=2)
-        super().__init__(*args, **kwargs)
-
-
-class ImageException(FileException):
-    """General image error exception"""
-
-
 class ImagesPipeline(FilesPipeline):
     """Abstract pipeline that implement the image thumbnail generation logic"""
 
@@ -324,7 +373,13 @@ class ImagesPipeline(FilesPipeline):
     @classmethod
     def from_settings(cls, settings):
         w3s_store = cls.STORE_SCHEMES['w3s']
-        w3s_store.API_KEY = settings['W3_API_KEY']
+        w3s_store.API_KEY = settings['W3S_API_KEY']
+
+        lh_store = cls.STORE_SCHEMES['lh']
+        lh_store.API_KEY = settings['LH_API_KEY']
+
+        es_store = cls.STORE_SCHEMES['es']
+        es_store.API_KEY = settings['ES_API_KEY']
 
         store_uri = settings['IMAGES_STORE']
         return cls(store_uri, settings=settings)

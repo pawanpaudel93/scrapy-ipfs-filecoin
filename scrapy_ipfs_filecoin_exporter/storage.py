@@ -11,10 +11,42 @@ class W3SFeedStorage(BlockingFeedStorage):
 
         u = urlparse(uri)
         self.file_name = u.path[1:]  # remove first "/"
-        api_key = settings.get("W3_API_KEY")
-        self.ws_client = W3SClient(api_key)
+        api_key = settings.get("W3S_API_KEY")
+        self.client = W3SClient(api_key)
 
     def _store_in_thread(self, file):
         file.seek(0)
-        self.ws_client.upload(self.file_name, [file])
+        self.client.upload(self.file_name, [file])
+        file.close()
+
+
+class EstuaryFeedStorage(BlockingFeedStorage):
+    def __init__(self, uri, *, feed_options=None):
+        settings = get_project_settings()
+        from .client import EstuaryClient
+
+        u = urlparse(uri)
+        self.file_name = u.path[1:]  # remove first "/"
+        api_key = settings.get("ES_API_KEY")
+        self.client = EstuaryClient(api_key)
+
+    def _store_in_thread(self, file):
+        file.seek(0)
+        self.client.upload(self.file_name, [file])
+        file.close()
+
+
+class LightStorageFeedStorage(BlockingFeedStorage):
+    def __init__(self, uri, *, feed_options=None):
+        settings = get_project_settings()
+        from .client import LightHouseClient
+
+        u = urlparse(uri)
+        self.file_name = u.path[1:]  # remove first "/"
+        api_key = settings.get("LH_API_KEY")
+        self.client = LightHouseClient(api_key)
+
+    def _store_in_thread(self, file):
+        file.seek(0)
+        self.client.upload(self.file_name, [file])
         file.close()
