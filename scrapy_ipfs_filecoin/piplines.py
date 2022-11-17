@@ -128,7 +128,7 @@ class LightHouseFilesStore(FSFilesStore):
         if not os.path.exists(absolute_path):
             return {}
 
-        cid = self.client.cid_hash(absolute_path)
+        cid = self.client.cid_hash(absolute_path, 0)
         headers = self._get_response_headers(cid)
         if not headers.get("Etag") or not headers.get("etag"):
             return {}
@@ -138,6 +138,45 @@ class LightHouseFilesStore(FSFilesStore):
     def _get_response_headers(self, cid):
         try:
             response = requests.head(f"https://gateway.lighthouse.storage/ipfs/{cid}", timeout=3)
+            return response.headers if response.ok else {}
+        except:
+            return {}
+
+
+class PinataFilesStore(FSFilesStore):
+    API_KEY = None
+    cids = {}
+
+    def __init__(self, basedir):
+        from .client import PinataClient
+
+        super().__init__(basedir)
+        self.client = PinataClient(self.API_KEY)
+
+    def persist_file(self, path, buf, info, meta=None, headers=None):
+        absolute_path = self._get_filesystem_path(path)
+        self._mkdir(os.path.dirname(absolute_path), info)
+        with open(absolute_path, 'wb') as f:
+            f.write(buf.getvalue())
+        filename = path.split("/")[-1]
+        self.cids[path] = self.client.cid_hash(absolute_path, 0)
+        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
+
+    def stat_file(self, path, info):
+        absolute_path = self._get_filesystem_path(path)
+        if not os.path.exists(absolute_path):
+            return {}
+
+        cid = self.client.cid_hash(absolute_path, 0)
+        headers = self._get_response_headers(cid)
+        if not headers.get("ETag"):
+            return {}
+
+        return {'cid': cid}
+
+    def _get_response_headers(self, cid):
+        try:
+            response = self.client.session.head(f"https://gateway.pinata.cloud/ipfs/{cid}", timeout=3)
             return response.headers if response.ok else {}
         except:
             return {}
@@ -164,6 +203,7 @@ class FilesPipeline(MediaPipeline):
         'w3s': Web3StorageFilesStore,
         'lh': LightHouseFilesStore,
         'es': EstuaryFilesStore,
+        'pn': PinataFilesStore,
     }
     DEFAULT_FILES_URLS_FIELD = 'file_urls'
     DEFAULT_FILES_RESULT_FIELD = 'files'
@@ -197,6 +237,9 @@ class FilesPipeline(MediaPipeline):
 
         es_store = cls.STORE_SCHEMES['es']
         es_store.API_KEY = settings['ES_API_KEY']
+
+        pn_store = cls.STORE_SCHEMES['pn']
+        pn_store.API_KEY = settings['PN_JWT_TOKEN']
 
         store_uri = settings['FILES_STORE']
         return cls(store_uri, settings=settings)
@@ -386,6 +429,9 @@ class ImagesPipeline(FilesPipeline):
 
         es_store = cls.STORE_SCHEMES['es']
         es_store.API_KEY = settings['ES_API_KEY']
+
+        pn_store = cls.STORE_SCHEMES['pn']
+        pn_store.API_KEY = settings['PN_JWT_TOKEN']
 
         store_uri = settings['IMAGES_STORE']
         return cls(store_uri, settings=settings)

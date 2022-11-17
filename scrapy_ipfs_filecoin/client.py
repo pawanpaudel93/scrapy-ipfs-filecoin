@@ -91,3 +91,21 @@ class LightHouseClient(Client):
 
     def get_url(self, cid):
         return f"https://gateway.lighthouse.storage/ipfs/{cid}"
+
+
+class PinataClient(Client):
+    def __init__(self, api_key, upload_url="https://api.pinata.cloud/pinning/pinFileToIPFS") -> None:
+        self.UPLOAD_URL = upload_url
+        super().__init__(api_key)
+
+    def upload(self, name, file):
+        response = self.session.post(
+            self.UPLOAD_URL,
+            headers=self._headers,
+            files={'file': (quote(name), file)},
+        )
+        response.raise_for_status()
+        return response.json()['IpfsHash']
+
+    def get_url(self, cid):
+        return f"https://gateway.pinata.cloud/ipfs/{cid}"

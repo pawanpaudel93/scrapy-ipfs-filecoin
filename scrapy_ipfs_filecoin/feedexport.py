@@ -61,10 +61,29 @@ class LightStorageFeedStorage(BlockingFeedStorage):
         file.close()
 
 
+class PinataFeedStorage(BlockingFeedStorage):
+    def __init__(self, uri, *, feed_options=None):
+        settings = get_project_settings()
+        from .client import PinataClient
+
+        u = urlparse(uri)
+        self.file_name = u.path if u.path else u.netloc
+        api_key = settings.get("PN_JWT_TOKEN")
+        self.client = PinataClient(api_key)
+
+    def _store_in_thread(self, file):
+        file.seek(0)
+        cid = self.client.upload(self.file_name, file)
+        ipfs_url = self.client.get_url(cid)
+        logging.info(ipfs_url)
+        file.close()
+
+
 def get_feed_storages():
     return {
         '': 'scrapy_ipfs_filecoin.feedexport.Web3StorageFeedStorage',
         'w3s': 'scrapy_ipfs_filecoin.feedexport.Web3StorageFeedStorage',
         'lh': 'scrapy_ipfs_filecoin.feedexport.LightStorageFeedStorage',
         'es': 'scrapy_ipfs_filecoin.feedexport.EstuaryFeedStorage',
+        'pn': 'scrapy_ipfs_filecoin.feedexport.PinataFeedStorage',
     }
