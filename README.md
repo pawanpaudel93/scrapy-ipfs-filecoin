@@ -1,4 +1,6 @@
-<h1 align="center">Scrapy IPFS Filecoin</h1>
+<p align="center"><img src="logo.png" alt="original" width="400" height="300"></p>
+
+<h1 align="center">Welcome to Scrapy-IPFS-Filecoin</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
