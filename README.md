@@ -1,15 +1,83 @@
-<h1 align="center">Welcome to scrapy-ipfs-filecoin-exporter</h1>
+<h1 align="center">Scrapy IPFS Filecoin</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
 
->
+Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storage, LightHouse and Estuary.
 
-### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin-exporter)
+### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin)
 
 ## Install
+`npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git`
+
+`pip install scrapy-ipfs-filecoin`
+
 ## Example
+
 ## Usage
+1. Install ipfs-only-hash and scrapy-ipfs-filecoin.
+
+	`npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git`
+
+	`pip install scrapy-ipfs-filecoin`
+
+2. Add 'scrapy-ipfs-filecoin.piplines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.piplines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project as necessary.
+
+	```json
+	ITEM_PIPELINES = {
+		'scrapy_ipfs_filecoin.piplines.ImagesPipeline': 1,
+		'scrapy-ipfs-filecoin.piplines.FilesPipeline': 2
+	}
+	```
+	Add store path of files or images for Web3Storage, LightHouse or Estuary as required.
+	```python
+	IMAGES_STORE = 'w3s://images' # For Web3Storage
+	IMAGES_STORE = 'es://images' # For Estuary
+	IMAGES_STORE = 'lh://images' # For LightHouse
+
+	FILES_STORE = 'w3s://files' # For Web3Storage
+	FILES_STORE = 'es://files' # For Estuary
+	FILES_STORE = 'lh://files' # For LightHouse
+	```
+
+3. For Feed storage to store the output of scraping, set FEED_STORAGES as following:
+
+	```python
+	from scrapy_ipfs_filecoin.feedexport import get_feed_storages
+	FEED_STORAGES = get_feed_storages()
+	```
+	Then set API Key for one of the storage i.e Web3Storage, LightHouse or Estuary. And, set FEEDS as following to finally store the scraped data.
+
+	For Web3Storage:
+	```python
+	W3S_API_KEY="<W3S_API_KEY>"
+	FEEDS={
+		'w3s://house.json': {
+			"format": "json"
+		},
+	}
+	```
+
+	For LightHouse:
+	```python
+	LH_API_KEY="<LH_API_KEY>"
+	FEEDS={
+		'lh://house.json': {
+			"format": "json"
+		},
+	}
+	```
+
+	For Estuary:
+	```python
+	ES_API_KEY="<W3S_API_KEY>"
+	FEEDS={
+		'es://house.json': {
+			"format": "json"
+		},
+	}
+	```
+See more on FEEDS [here](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds)
 
 
 ## Author
@@ -20,7 +88,7 @@
 
 ## 🤝 Contributing
 
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin-exporter/issues).
+Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin/issues).
 
 ## Show your support
 
