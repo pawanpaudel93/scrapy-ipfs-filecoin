@@ -1,7 +1,10 @@
+import logging
 from urllib.parse import urlparse
 
 from scrapy.extensions.feedexport import BlockingFeedStorage
 from scrapy.utils.project import get_project_settings
+
+logger = logging.getLogger(__name__)
 
 
 class W3SFeedStorage(BlockingFeedStorage):
@@ -10,13 +13,15 @@ class W3SFeedStorage(BlockingFeedStorage):
         from .client import W3SClient
 
         u = urlparse(uri)
-        self.file_name = u.path[1:]  # remove first "/"
+        self.file_name = u.path if u.path else u.netloc
         api_key = settings.get("W3S_API_KEY")
         self.client = W3SClient(api_key)
 
     def _store_in_thread(self, file):
         file.seek(0)
-        self.client.upload(self.file_name, [file])
+        cid = self.client.upload(self.file_name, file)
+        ipfs_url = self.client.get_url(cid)
+        logging.info(ipfs_url)
         file.close()
 
 
@@ -26,13 +31,15 @@ class EstuaryFeedStorage(BlockingFeedStorage):
         from .client import EstuaryClient
 
         u = urlparse(uri)
-        self.file_name = u.path[1:]  # remove first "/"
+        self.file_name = u.path if u.path else u.netloc
         api_key = settings.get("ES_API_KEY")
         self.client = EstuaryClient(api_key)
 
     def _store_in_thread(self, file):
         file.seek(0)
-        self.client.upload(self.file_name, [file])
+        cid = self.client.upload(self.file_name, file)
+        ipfs_url = self.client.get_url(cid)
+        logging.info(ipfs_url)
         file.close()
 
 
@@ -42,11 +49,22 @@ class LightStorageFeedStorage(BlockingFeedStorage):
         from .client import LightHouseClient
 
         u = urlparse(uri)
-        self.file_name = u.path[1:]  # remove first "/"
+        self.file_name = u.path if u.path else u.netloc
         api_key = settings.get("LH_API_KEY")
         self.client = LightHouseClient(api_key)
 
     def _store_in_thread(self, file):
         file.seek(0)
-        self.client.upload(self.file_name, [file])
+        cid = self.client.upload(self.file_name, file)
+        ipfs_url = self.client.get_url(cid)
+        logging.info(ipfs_url)
         file.close()
+
+
+def get_feed_storages():
+    return {
+        '': 'scrapy_ipfs_filecoin_exporter.W3SFeedStorage',
+        'w3s': 'scrapy_ipfs_filecoin_exporter.W3SFeedStorage',
+        'lh': 'scrapy_ipfs_filecoin_exporter.LightStorageFeedStorage',
+        'es': 'scrapy_ipfs_filecoin_exporter.EstuaryFeedStorage',
+    }

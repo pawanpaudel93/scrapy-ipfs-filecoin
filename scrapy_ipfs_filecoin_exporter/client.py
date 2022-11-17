@@ -1,8 +1,9 @@
-import requests
 import subprocess
 from urllib.parse import quote
-from urllib3.util.retry import Retry
+
+import requests
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -43,16 +44,17 @@ class W3SClient(Client):
         self.UPLOAD_URL = upload_url
         super().__init__(api_key)
 
-    def upload(self, name, files=[]):
-        if len(files) == 0:
-            raise "No files to upload"
+    def upload(self, name, file):
         response = self.session.post(
             self.UPLOAD_URL,
             headers={**self._headers, "X-NAME": quote(name)},
-            files=[('file', file) for file in files] if len(files) > 1 else {'file': files[0]},
+            files={'file': (quote(name), file)},
         )
         response.raise_for_status()
         return response.json()['cid']
+
+    def get_url(self, cid):
+        return f"https://w3s.link/ipfs/{cid}"
 
 
 class EstuaryClient(Client):
@@ -60,18 +62,18 @@ class EstuaryClient(Client):
         self.UPLOAD_URL = upload_url
         super().__init__(api_key)
 
-    def upload(self, name, files=[]):
-        if len(files) == 0:
-            raise "No files to upload"
+    def upload(self, name, file):
         response = self.session.post(
             self.UPLOAD_URL,
             headers=self._headers,
-            files=[('data', file) for file in files]
-            if len(files) > 1
-            else {'data': files[0], "filename": quote(name)},
+            files={'data': (quote(name), file)},
         )
+        print(response.json())
         response.raise_for_status()
         return response.json()['cid']
+
+    def get_url(self, cid):
+        return f"https://api.estuary.tech/gw/ipfs/{cid}"
 
 
 class LightHouseClient(Client):
@@ -79,13 +81,14 @@ class LightHouseClient(Client):
         self.UPLOAD_URL = upload_url
         super().__init__(api_key)
 
-    def upload(self, name, files=[]):
-        if len(files) == 0:
-            raise "No files to upload"
+    def upload(self, name, file):
         response = self.session.post(
             self.UPLOAD_URL,
-            headers={**self._headers, "X-NAME": quote(name)},
-            files=[('file', file) for file in files] if len(files) > 1 else {'file': files[0]},
+            headers=self._headers,
+            files={'file': (quote(name), file)},
         )
         response.raise_for_status()
         return response.json()['Hash']
+
+    def get_url(self, cid):
+        return f"https://gateway.lighthouse.storage/ipfs/{cid}"

@@ -12,7 +12,7 @@ import requests
 from itemadapter import ItemAdapter
 from scrapy.exceptions import IgnoreRequest, NotConfigured, ScrapyDeprecationWarning
 from scrapy.http import Request
-from scrapy.pipelines.files import FileException, FSFilesStore, FileException
+from scrapy.pipelines.files import FileException, FSFilesStore
 from scrapy.pipelines.images import ImageException
 from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
@@ -41,7 +41,7 @@ class W3SFilesStore(FSFilesStore):
             f.write(buf.getvalue())
         filename = path.split("/")[-1]
         self.cids[path] = self.client.cid_hash(absolute_path)
-        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
+        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -80,7 +80,7 @@ class EstuaryFilesStore(FSFilesStore):
             f.write(buf.getvalue())
         filename = path.split("/")[-1]
         self.cids[path] = self.client.cid_hash(absolute_path)
-        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
+        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -121,7 +121,7 @@ class LightHouseFilesStore(FSFilesStore):
             f.write(buf.getvalue())
         filename = path.split("/")[-1]
         self.cids[path] = self.client.cid_hash(absolute_path, 0)
-        return threads.deferToThread(self.client.upload, name=filename, files=[buf.getvalue()])
+        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -218,7 +218,8 @@ class FilesPipeline(MediaPipeline):
             self.inc_stats(info.spider, 'uptodate')
 
             cid = result.get('cid', None)
-            return {'url': request.url, 'path': path, 'cid': cid}
+            ipfs_url = self.store.client.get_url(cid)
+            return {'url': request.url, 'cid': cid, 'ipfsUrl': ipfs_url}
 
         path = self.file_path(request, info=info, item=item)
         dfd = defer.maybeDeferred(self.store.stat_file, path, info)
@@ -290,8 +291,8 @@ class FilesPipeline(MediaPipeline):
                 extra={'spider': info.spider},
             )
             raise FileException(str(exc))
-
-        return {'url': request.url, 'path': path, 'cid': cid}
+        ipfs_url = self.store.client.get_url(cid)
+        return {'url': request.url, 'cid': cid, "ipfsUrl": ipfs_url}
 
     def inc_stats(self, spider, status):
         spider.crawler.stats.inc_value('file_count', spider=spider)
