@@ -1,4 +1,5 @@
 import subprocess
+from base64 import b64encode
 from urllib.parse import quote
 
 import requests
@@ -109,3 +110,27 @@ class PinataClient(Client):
 
     def get_url(self, cid):
         return f"https://gateway.pinata.cloud/ipfs/{cid}"
+
+
+class MoralisClient(Client):
+    def __init__(self, api_key, upload_url="https://deep-index.moralis.io/api/v2/ipfs/uploadFolder") -> None:
+        self.UPLOAD_URL = upload_url
+        super().__init__(api_key)
+        self._headers = {"X-API-Key": api_key}
+
+    def upload(self, name, file):
+        try:
+            content = b64encode(file).decode('utf-8')
+        except:
+            content = b64encode(file.file.read()).decode('utf-8')
+        response = self.session.post(
+            self.UPLOAD_URL,
+            headers=self._headers,
+            json=[{"path": quote(name), "content": content}],
+        )
+        response.raise_for_status()
+        path = response.json()[0]['path']
+        return path.split("/ipfs/")[-1]
+
+    def get_url(self, cid):
+        return f"https://ipfs.moralis.io:2053/ipfs/{cid}"
