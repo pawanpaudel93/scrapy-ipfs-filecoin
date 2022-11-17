@@ -63,8 +63,8 @@ class LightStorageFeedStorage(BlockingFeedStorage):
 
 def get_feed_storages():
     return {
-        '': 'scrapy_ipfs_filecoin.Web3StorageFeedStorage',
-        'w3s': 'scrapy_ipfs_filecoin.Web3StorageFeedStorage',
-        'lh': 'scrapy_ipfs_filecoin.LightStorageFeedStorage',
-        'es': 'scrapy_ipfs_filecoin.EstuaryFeedStorage',
+        '': 'scrapy_ipfs_filecoin.feedexport.Web3StorageFeedStorage',
+        'w3s': 'scrapy_ipfs_filecoin.feedexport.Web3StorageFeedStorage',
+        'lh': 'scrapy_ipfs_filecoin.feedexport.LightStorageFeedStorage',
+        'es': 'scrapy_ipfs_filecoin.feedexport.EstuaryFeedStorage',
     }
