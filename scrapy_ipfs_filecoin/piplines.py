@@ -24,15 +24,15 @@ from twisted.internet import defer, threads
 logger = logging.getLogger(__name__)
 
 
-class W3SFilesStore(FSFilesStore):
+class Web3StorageFilesStore(FSFilesStore):
     API_KEY = None
     cids = {}
 
     def __init__(self, basedir):
-        from .client import W3SClient
+        from .client import Web3StorageClient
 
         super().__init__(basedir)
-        self.client = W3SClient(self.API_KEY)
+        self.client = Web3StorageClient(self.API_KEY)
 
     def persist_file(self, path, buf, info, meta=None, headers=None):
         absolute_path = self._get_filesystem_path(path)
@@ -159,7 +159,12 @@ class FilesPipeline(MediaPipeline):
 
     MEDIA_NAME = "file"
     EXPIRES = 90
-    STORE_SCHEMES = {'': W3SFilesStore, 'w3s': W3SFilesStore, 'lh': LightHouseFilesStore, 'es': EstuaryFilesStore}
+    STORE_SCHEMES = {
+        '': Web3StorageFilesStore,
+        'w3s': Web3StorageFilesStore,
+        'lh': LightHouseFilesStore,
+        'es': EstuaryFilesStore,
+    }
     DEFAULT_FILES_URLS_FIELD = 'file_urls'
     DEFAULT_FILES_RESULT_FIELD = 'files'
 

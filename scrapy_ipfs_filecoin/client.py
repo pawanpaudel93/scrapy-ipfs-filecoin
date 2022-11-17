@@ -39,7 +39,7 @@ class Client:
         return output.stdout.decode("utf-8").strip()
 
 
-class W3SClient(Client):
+class Web3StorageClient(Client):
     def __init__(self, api_key, upload_url="https://api.web3.storage/upload") -> None:
         self.UPLOAD_URL = upload_url
         super().__init__(api_key)
@@ -68,7 +68,6 @@ class EstuaryClient(Client):
             headers=self._headers,
             files={'data': (quote(name), file)},
         )
-        print(response.json())
         response.raise_for_status()
         return response.json()['cid']
 
