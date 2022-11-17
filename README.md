@@ -3,7 +3,7 @@
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
 
-Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storage, LightHouse and Estuary.
+Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storage, LightHouse, Estuary, Pinata and Moralis.
 
 ### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin)
 
@@ -23,21 +23,26 @@ Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storag
 
 2. Add 'scrapy-ipfs-filecoin.piplines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.piplines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project as necessary.
 
-	```json
+	```python
 	ITEM_PIPELINES = {
 		'scrapy_ipfs_filecoin.piplines.ImagesPipeline': 1,
 		'scrapy-ipfs-filecoin.piplines.FilesPipeline': 2
 	}
 	```
+	
 	Add store path of files or images for Web3Storage, LightHouse or Estuary as required.
 	```python
 	IMAGES_STORE = 'w3s://images' # For Web3Storage
 	IMAGES_STORE = 'es://images' # For Estuary
 	IMAGES_STORE = 'lh://images' # For LightHouse
+	IMAGES_STORE = 'pn://images' # For Pinata
+	IMAGES_STORE = 'ms://images' # For Moralis
 
 	FILES_STORE = 'w3s://files' # For Web3Storage
 	FILES_STORE = 'es://files' # For Estuary
 	FILES_STORE = 'lh://files' # For LightHouse
+	FILES_STORE = 'es://files' # For Pinata
+	FILES_STORE = 'pn://files' # For Moralis
 	```
 
 3. For Feed storage to store the output of scraping, set FEED_STORAGES as following:
@@ -77,6 +82,27 @@ Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storag
 		},
 	}
 	```
+	
+	For Pinata:
+	```python
+	PN_JWT_TOKEN="<PN_JWT_TOKEN>"
+	FEEDS={
+		'pn://house.json': {
+			"format": "json"
+		},
+	}
+	```
+	
+	For Moralis:
+	```python
+	MS_API_KEY="<MS_API_KEY>"
+	FEEDS={
+		'ms://house.json': {
+			"format": "json"
+		},
+	}
+	```
+	
 See more on FEEDS [here](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds)
 
 
