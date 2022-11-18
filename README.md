@@ -10,18 +10,27 @@ Scrapy is a popular open-source and collaborative python framework for extractin
 ### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin)
 
 ## Install
-`npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git`
 
-`pip install scrapy-ipfs-filecoin`
+```shell
+npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git
+```
+```shell
+pip install scrapy-ipfs-filecoin
+```
 
 ## Example
 
+[scrapy-ipfs-filecoin-example](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin-example)
+	
 ## Usage
 1. Install ipfs-only-hash and scrapy-ipfs-filecoin.
 
-	`npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git`
-
-	`pip install scrapy-ipfs-filecoin`
+	```shell
+	npm install -g https://github.com/pawanpaudel93/ipfs-only-hash.git
+	```
+	```shell
+	pip install scrapy-ipfs-filecoin
+	```
 
 2. Add 'scrapy-ipfs-filecoin.pipelines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.pipelines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project if you need to store images or other files to IPFS and Filecoin.
 
