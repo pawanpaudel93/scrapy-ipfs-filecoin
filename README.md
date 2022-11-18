@@ -23,12 +23,12 @@ scrapy-ipfs-filecoin provides pipelines and feed exports to store items into IPF
 
 	`pip install scrapy-ipfs-filecoin`
 
-2. Add 'scrapy-ipfs-filecoin.piplines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.piplines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project if you need to store images or other files to IPFS and Filecoin.
+2. Add 'scrapy-ipfs-filecoin.pipelines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.pipelines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project if you need to store images or other files to IPFS and Filecoin.
 
 	```python
 	ITEM_PIPELINES = {
-		'scrapy_ipfs_filecoin.piplines.ImagesPipeline': 1,
-		'scrapy-ipfs-filecoin.piplines.FilesPipeline': 2
+		'scrapy_ipfs_filecoin.pipelines.ImagesPipeline': 1,
+		'scrapy-ipfs-filecoin.pipelines.FilesPipeline': 2
 	}
 	```
 	
