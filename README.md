@@ -5,7 +5,7 @@
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
 
-Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storage, LightHouse, Estuary, Pinata and Moralis.
+scrapy-ipfs-filecoin provides pipelines and feed exports to store items into IPFS and Filecoin using services like Web3Storage, LightHouse, Estuary, Pinata and Moralis.
 
 ### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin)
 
@@ -23,7 +23,7 @@ Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storag
 
 	`pip install scrapy-ipfs-filecoin`
 
-2. Add 'scrapy-ipfs-filecoin.piplines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.piplines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project as necessary.
+2. Add 'scrapy-ipfs-filecoin.piplines.ImagesPipeline' and/or 'scrapy-ipfs-filecoin.piplines.FilesPipeline' to ITEM_PIPELINES setting in your Scrapy project if you need to store images or other files to IPFS and Filecoin.
 
 	```python
 	ITEM_PIPELINES = {
@@ -47,7 +47,7 @@ Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storag
 	FILES_STORE = 'pn://files' # For Moralis
 	```
 
-3. For Feed storage to store the output of scraping, set FEED_STORAGES as following:
+3. For Feed storage to store the output of scraping as json, csv, json, jsonlines, jsonl, jl, csv, xml, marshal, pickle etc set FEED_STORAGES as following for the desired output format:
 
 	```python
 	from scrapy_ipfs_filecoin.feedexport import get_feed_storages
@@ -105,8 +105,9 @@ Scrapy ipfs & filecoin pipelines and feed exports to store items into Web3Storag
 	}
 	```
 	
-See more on FEEDS [here](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds)
+	See more on FEEDS [here](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds)
 
+4. Now perform the scrapping as you would normally.
 
 ## Author
 
