@@ -12,7 +12,7 @@ URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin"
 EMAIL = "pawanpaudel93@gmail.com"
 AUTHOR = "Pawan Paudel"
 REQUIRES_PYTHON = ">=3.0"
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 REQUIRED = ["requests"]
 
@@ -97,7 +97,7 @@ setup(
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        "License :: OSI Approved :: ISC License (ISCL)",
+        "License :: OSI Approved :: MIT License",
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",

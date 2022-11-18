@@ -1,8 +1,8 @@
-<p align="center"><img src="logo.png" alt="original" width="400" height="300"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/pawanpaudel93/scrapy-ipfs-filecoin/main/logo.png" alt="original" width="400" height="300"></p>
 
 <h1 align="center">Welcome to Scrapy-IPFS-Filecoin</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.0.2-blue.svg?cacheSeconds=2592000" />
 </p>
 
 Scrapy is a popular open-source and collaborative python framework for extracting the data you need from websites. scrapy-ipfs-filecoin provides scrapy pipelines and feed exports to store items into IPFS and Filecoin using services like [Web3.Storage](https://web3.storage/), [LightHouse.Storage](https://lighthouse.storage/), [Estuary](https://estuary.tech/), [Pinata](https://www.pinata.cloud/) and [Moralis](https://moralis.io/).
