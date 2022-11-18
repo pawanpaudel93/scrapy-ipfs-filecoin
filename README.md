@@ -5,7 +5,7 @@
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
 
-scrapy-ipfs-filecoin provides pipelines and feed exports to store items into IPFS and Filecoin using services like Web3Storage, LightHouse, Estuary, Pinata and Moralis.
+Scrapy is a popular open-source and collaborative python framework for extracting the data you need from websites. scrapy-ipfs-filecoin provides scrapy pipelines and feed exports to store items into IPFS and Filecoin using services like [Web3.Storage](https://web3.storage/), [LightHouse.Storage](https://lighthouse.storage/), [Estuary](https://estuary.tech/), [Pinata](https://www.pinata.cloud/) and [Moralis](https://moralis.io/).
 
 ### 🏠 [Homepage](https://github.com/pawanpaudel93/scrapy-ipfs-filecoin)
 
