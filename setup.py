@@ -3,12 +3,12 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import Command, find_packages, setup
+from setuptools import Command, setup
 
 # Package meta-data.
 NAME = "scrapy_ipfs_filecoin"
-DESCRIPTION = "A scrapy ipfs filecoin exporter"
-URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin-exporter"
+DESCRIPTION = "Scrapy is a popular open-source and collaborative python framework for extracting the data you need from websites. scrapy-ipfs-filecoin provides scrapy pipelines and feed exports to store items into IPFS and Filecoin using services like Web3.Storage, LightHouse.Storage, Estuary, Pinata and Moralis."
+URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin"
 EMAIL = "pawanpaudel93@gmail.com"
 AUTHOR = "Pawan Paudel"
 REQUIRES_PYTHON = ">=3.0"
