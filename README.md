@@ -42,7 +42,7 @@ pip install scrapy-ipfs-filecoin
 	For Files Pipeline, use:
 
 	```shell
-	ITEM_PIPELINES = {'scrapy_ipfs_filecoin.pipelines..FilesPipeline': 1}
+	ITEM_PIPELINES = {'scrapy_ipfs_filecoin.pipelines.FilesPipeline': 1}
 	```
 	
 	The advantage of using the ImagesPipeline for image files is that you can configure some extra functions like generating thumbnails and filtering the images based on their size.
