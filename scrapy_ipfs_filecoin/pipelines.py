@@ -213,7 +213,7 @@ class S3FilesStore(ParentS3FilesStore):
 
     def stat_file(self, path, info):
         def _onsuccess(boto_key):
-            cid = boto_key['ETag'].strip('"')
+            cid = boto_key['x-amz-meta-cid']
             return {'cid': cid}
 
         return self._get_boto_key(path).addCallback(_onsuccess)

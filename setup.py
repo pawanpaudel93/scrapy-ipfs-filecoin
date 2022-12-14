@@ -12,7 +12,7 @@ URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin"
 EMAIL = "pawanpaudel93@gmail.com"
 AUTHOR = "Pawan Paudel"
 REQUIRES_PYTHON = ">=3.0"
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 
 REQUIRED = ["requests"]
 
