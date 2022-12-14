@@ -7,7 +7,7 @@ from setuptools import Command, setup
 
 # Package meta-data.
 NAME = "scrapy_ipfs_filecoin"
-DESCRIPTION = "Scrapy is a popular open-source and collaborative python framework for extracting the data you need from websites. scrapy-ipfs-filecoin provides scrapy pipelines and feed exports to store items into IPFS and Filecoin using services like Web3.Storage, LightHouse.Storage, Estuary, Pinata and Moralis."
+DESCRIPTION = "Scrapy is a popular open-source and collaborative python framework for extracting the data you need from websites. scrapy-ipfs-filecoin provides scrapy pipelines and feed exports to store items into IPFS and Filecoin using services like Web3.Storage, LightHouse.Storage, Estuary, Pinata, Moralis, Filebase or any s3 compatible services."
 URL = "https://github.com/pawanpaudel93/scrapy-ipfs-filecoin"
 EMAIL = "pawanpaudel93@gmail.com"
 AUTHOR = "Pawan Paudel"
