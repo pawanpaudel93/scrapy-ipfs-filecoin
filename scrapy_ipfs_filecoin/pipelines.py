@@ -1,21 +1,23 @@
 import functools
 import hashlib
 import logging
-import mimetypes
 import os
+import tempfile
 import warnings
 from contextlib import suppress
 from io import BytesIO
 from urllib.parse import urlparse
 
-import requests
 from itemadapter import ItemAdapter
-from scrapy.exceptions import IgnoreRequest, NotConfigured, ScrapyDeprecationWarning
+from scrapy.exceptions import NotConfigured, ScrapyDeprecationWarning
 from scrapy.http import Request
-from scrapy.pipelines.files import FileException, FSFilesStore
+from scrapy.pipelines.files import FileException
+from scrapy.pipelines.files import FilesPipeline as ParentFilesPipeline
+from scrapy.pipelines.files import FSFilesStore as ParentFSFilesStore
+from scrapy.pipelines.files import S3FilesStore as ParentS3FilesStore
 from scrapy.pipelines.images import ImageException
-from scrapy.pipelines.media import MediaPipeline
 from scrapy.settings import Settings
+from scrapy.utils.boto import is_botocore_available
 from scrapy.utils.log import failure_to_exc_info
 from scrapy.utils.python import get_func_args, to_bytes
 from scrapy.utils.request import referer_str
@@ -24,15 +26,9 @@ from twisted.internet import defer, threads
 logger = logging.getLogger(__name__)
 
 
-class Web3StorageFilesStore(FSFilesStore):
+class FSFilesStore(ParentFSFilesStore):
     API_KEY = None
-    cids = {}
-
-    def __init__(self, basedir):
-        from .client import Web3StorageClient
-
-        super().__init__(basedir)
-        self.client = Web3StorageClient(self.API_KEY)
+    CIDS = {}
 
     def persist_file(self, path, buf, info, meta=None, headers=None):
         absolute_path = self._get_filesystem_path(path)
@@ -40,8 +36,16 @@ class Web3StorageFilesStore(FSFilesStore):
         with open(absolute_path, 'wb') as f:
             f.write(buf.getvalue())
         filename = path.split("/")[-1]
-        self.cids[path] = self.client.cid_hash(absolute_path)
+        self.CIDS[path] = self.client.cid_hash(absolute_path)
         return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
+
+
+class Web3StorageFilesStore(FSFilesStore):
+    def __init__(self, basedir):
+        from .client import Web3StorageClient
+
+        super().__init__(basedir)
+        self.client = Web3StorageClient(self.API_KEY)
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -64,23 +68,11 @@ class Web3StorageFilesStore(FSFilesStore):
 
 
 class EstuaryFilesStore(FSFilesStore):
-    API_KEY = None
-    cids = {}
-
     def __init__(self, basedir):
         from .client import EstuaryClient
 
         super().__init__(basedir)
         self.client = EstuaryClient(self.API_KEY)
-
-    def persist_file(self, path, buf, info, meta=None, headers=None):
-        absolute_path = self._get_filesystem_path(path)
-        self._mkdir(os.path.dirname(absolute_path), info)
-        with open(absolute_path, 'wb') as f:
-            f.write(buf.getvalue())
-        filename = path.split("/")[-1]
-        self.cids[path] = self.client.cid_hash(absolute_path)
-        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -105,23 +97,11 @@ class EstuaryFilesStore(FSFilesStore):
 
 
 class LightHouseFilesStore(FSFilesStore):
-    API_KEY = None
-    cids = {}
-
     def __init__(self, basedir):
         from .client import LightHouseClient
 
         super().__init__(basedir)
         self.client = LightHouseClient(self.API_KEY)
-
-    def persist_file(self, path, buf, info, meta=None, headers=None):
-        absolute_path = self._get_filesystem_path(path)
-        self._mkdir(os.path.dirname(absolute_path), info)
-        with open(absolute_path, 'wb') as f:
-            f.write(buf.getvalue())
-        filename = path.split("/")[-1]
-        self.cids[path] = self.client.cid_hash(absolute_path, 0)
-        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -137,30 +117,18 @@ class LightHouseFilesStore(FSFilesStore):
 
     def _get_response_headers(self, cid):
         try:
-            response = requests.head(f"https://gateway.lighthouse.storage/ipfs/{cid}", timeout=3)
+            response = self.client.session.head(f"https://gateway.lighthouse.storage/ipfs/{cid}", timeout=3)
             return response.headers if response.ok else {}
         except:
             return {}
 
 
 class PinataFilesStore(FSFilesStore):
-    API_KEY = None
-    cids = {}
-
     def __init__(self, basedir):
         from .client import PinataClient
 
         super().__init__(basedir)
         self.client = PinataClient(self.API_KEY)
-
-    def persist_file(self, path, buf, info, meta=None, headers=None):
-        absolute_path = self._get_filesystem_path(path)
-        self._mkdir(os.path.dirname(absolute_path), info)
-        with open(absolute_path, 'wb') as f:
-            f.write(buf.getvalue())
-        filename = path.split("/")[-1]
-        self.cids[path] = self.client.cid_hash(absolute_path, 0)
-        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
 
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
@@ -183,30 +151,17 @@ class PinataFilesStore(FSFilesStore):
 
 
 class MoralisFilesStore(FSFilesStore):
-    API_KEY = None
-    cids = {}
-
     def __init__(self, basedir):
         from .client import MoralisClient
 
         super().__init__(basedir)
         self.client = MoralisClient(self.API_KEY)
 
-    def persist_file(self, path, buf, info, meta=None, headers=None):
-        absolute_path = self._get_filesystem_path(path)
-        self._mkdir(os.path.dirname(absolute_path), info)
-        with open(absolute_path, 'wb') as f:
-            f.write(buf.getvalue())
-        filename = path.split("/")[-1]
-        self.cids[path] = self.client.cid_hash(absolute_path, 0)
-        return threads.deferToThread(self.client.upload, name=filename, file=buf.getvalue())
-
     def stat_file(self, path, info):
         absolute_path = self._get_filesystem_path(path)
         if not os.path.exists(absolute_path):
             return {}
 
-        filename = path.split("/")[-1]
         cid = self.client.cid_hash(absolute_path, 0)
         headers = self._get_response_headers(cid)
         if not headers.get("ETag"):
@@ -222,22 +177,60 @@ class MoralisFilesStore(FSFilesStore):
             return {}
 
 
-class FilesPipeline(MediaPipeline):
-    """Abstract pipeline that implement the file downloading
-    This pipeline tries to minimize network transfers and file processing,
-    doing stat of the files and determining if file is new, up-to-date or
-    expired.
-    ``new`` files are those that pipeline never processed and needs to be
-        downloaded from supplier site the first time.
-    ``uptodate`` files are the ones that the pipeline processed and are still
-        valid files.
-    ``expired`` files are those that pipeline already processed but the last
-        modification was made long time ago, so a reprocessing is recommended to
-        refresh it in case of change.
-    """
+class S3FilesStore(ParentS3FilesStore):
+    S3_ACCESS_KEY_ID = None
+    S3_SECRET_ACCESS_KEY = None
+    S3_SESSION_TOKEN = None
+    S3_ENDPOINT_URL = None
+    S3_REGION_NAME = None
+    S3_USE_SSL = None
+    S3_VERIFY = None
+    S3_IPFS_URL_FORMAT = None
+    CIDS = {}
 
-    MEDIA_NAME = "file"
-    EXPIRES = 90
+    def __init__(self, uri):
+        if not is_botocore_available():
+            raise NotConfigured('missing botocore library')
+        import botocore.session
+
+        from .client import S3Client
+
+        session = botocore.session.get_session()
+        self.client = S3Client(self.S3_IPFS_URL_FORMAT)
+        self.s3_client = session.create_client(
+            's3',
+            aws_access_key_id=self.S3_ACCESS_KEY_ID,
+            aws_secret_access_key=self.S3_SECRET_ACCESS_KEY,
+            aws_session_token=self.S3_SESSION_TOKEN,
+            endpoint_url=self.S3_ENDPOINT_URL,
+            region_name=self.S3_REGION_NAME,
+            use_ssl=self.S3_USE_SSL if self.S3_USE_SSL != None else True,
+            verify=self.S3_VERIFY,
+        )
+        if not uri.startswith("s3://"):
+            raise ValueError(f"Incorrect URI scheme in {uri}, expected 's3'")
+        self.bucket, self.prefix = uri[5:].split('/', 1)
+
+    def stat_file(self, path, info):
+        def _onsuccess(boto_key):
+            cid = boto_key['ETag'].strip('"')
+            return {'cid': cid}
+
+        return self._get_boto_key(path).addCallback(_onsuccess)
+
+    def persist_file(self, path, buf, info, meta=None, headers=None):
+        """Upload file to S3 storage"""
+        with tempfile.NamedTemporaryFile() as temp:
+            buf.seek(0)
+            temp.write(buf.getvalue())
+            self.CIDS[path] = self.client.cid_hash(temp.name, 0)
+
+        return super().persist_file(path, buf, info, meta, headers)
+
+
+class FilesPipeline(ParentFilesPipeline):
+    """Custom Files Abstract pipeline that implement the file downloading"""
+
     STORE_SCHEMES = {
         '': Web3StorageFilesStore,
         'w3s': Web3StorageFilesStore,
@@ -245,31 +238,22 @@ class FilesPipeline(MediaPipeline):
         'es': EstuaryFilesStore,
         'pn': PinataFilesStore,
         'ms': MoralisFilesStore,
+        's3': S3FilesStore,
     }
-    DEFAULT_FILES_URLS_FIELD = 'file_urls'
-    DEFAULT_FILES_RESULT_FIELD = 'files'
-
-    def __init__(self, store_uri, download_func=None, settings=None):
-        if not store_uri:
-            raise NotConfigured
-        if isinstance(settings, dict) or settings is None:
-            settings = Settings(settings)
-
-        cls_name = "FilesPipeline"
-        self.store = self._get_store(store_uri)
-        resolve = functools.partial(self._key_for_pipe, base_class_name=cls_name, settings=settings)
-        self.expires = settings.getint(resolve('FILES_EXPIRES'), self.EXPIRES)
-        if not hasattr(self, "FILES_URLS_FIELD"):
-            self.FILES_URLS_FIELD = self.DEFAULT_FILES_URLS_FIELD
-        if not hasattr(self, "FILES_RESULT_FIELD"):
-            self.FILES_RESULT_FIELD = self.DEFAULT_FILES_RESULT_FIELD
-        self.files_urls_field = settings.get(resolve('FILES_URLS_FIELD'), self.FILES_URLS_FIELD)
-        self.files_result_field = settings.get(resolve('FILES_RESULT_FIELD'), self.FILES_RESULT_FIELD)
-
-        super().__init__(download_func=download_func, settings=settings)
 
     @classmethod
-    def from_settings(cls, settings):
+    def init_settings(cls, settings):
+        s3_store = cls.STORE_SCHEMES['s3']
+        s3_store.S3_ACCESS_KEY_ID = settings['S3_ACCESS_KEY_ID']
+        s3_store.S3_SECRET_ACCESS_KEY = settings['S3_SECRET_ACCESS_KEY']
+        s3_store.S3_SESSION_TOKEN = settings['S3_SESSION_TOKEN']
+        s3_store.S3_ENDPOINT_URL = settings['S3_ENDPOINT_URL']
+        s3_store.S3_REGION_NAME = settings['S3_REGION_NAME']
+        s3_store.S3_USE_SSL = settings['S3_USE_SSL']
+        s3_store.S3_VERIFY = settings['S3_VERIFY']
+        s3_store.POLICY = settings['FILES_STORE_S3_ACL']
+        s3_store.S3_IPFS_URL_FORMAT = settings['S3_IPFS_URL_FORMAT']
+
         w3s_store = cls.STORE_SCHEMES['w3s']
         w3s_store.API_KEY = settings['W3S_API_KEY']
 
@@ -285,6 +269,9 @@ class FilesPipeline(MediaPipeline):
         pn_store = cls.STORE_SCHEMES['pn']
         pn_store.API_KEY = settings['PN_JWT_TOKEN']
 
+    @classmethod
+    def from_settings(cls, settings):
+        cls.init_settings(settings)
         store_uri = settings['FILES_STORE']
         return cls(store_uri, settings=settings)
 
@@ -324,18 +311,6 @@ class FilesPipeline(MediaPipeline):
             )
         )
         return dfd
-
-    def media_failed(self, failure, request, info):
-        if not isinstance(failure.value, IgnoreRequest):
-            referer = referer_str(request)
-            logger.warning(
-                'File (unknown-error): Error downloading %(medianame)s from '
-                '%(request)s referred in <%(referer)s>: %(exception)s',
-                {'medianame': self.MEDIA_NAME, 'request': request, 'referer': referer, 'exception': failure.value},
-                extra={'spider': info.spider},
-            )
-
-        raise FileException
 
     def media_downloaded(self, response, request, info, *, item=None):
         referer = referer_str(request)
@@ -386,42 +361,16 @@ class FilesPipeline(MediaPipeline):
         ipfs_url = self.store.client.get_url(cid)
         return {'url': request.url, 'cid': cid, "ipfsUrl": ipfs_url}
 
-    def inc_stats(self, spider, status):
-        spider.crawler.stats.inc_value('file_count', spider=spider)
-        spider.crawler.stats.inc_value(f'file_status_count/{status}', spider=spider)
-
-    # Overridable Interface
-    def get_media_requests(self, item, info):
-        urls = ItemAdapter(item).get(self.files_urls_field, [])
-        return [Request(u) for u in urls]
-
     def file_downloaded(self, response, request, info, *, item=None):
         path = self.file_path(request, response=response, info=info, item=item)
         buf = BytesIO(response.body)
         buf.seek(0)
         self.store.persist_file(path, buf, info)
-        return self.store.cids[path]
-
-    def item_completed(self, results, item, info):
-        with suppress(KeyError):
-            ItemAdapter(item)[self.files_result_field] = [x for ok, x in results if ok]
-        return item
-
-    def file_path(self, request, response=None, info=None, *, item=None):
-        media_guid = hashlib.sha1(to_bytes(request.url)).hexdigest()
-        media_ext = os.path.splitext(request.url)[1]
-        # Handles empty and wild extensions by trying to guess the
-        # mime type then extension or default to empty string otherwise
-        if media_ext not in mimetypes.types_map:
-            media_ext = ''
-            media_type = mimetypes.guess_type(request.url)[0]
-            if media_type:
-                media_ext = mimetypes.guess_extension(media_type)
-        return f'full/{media_guid}{media_ext}'
+        return self.store.CIDS[path]
 
 
 class ImagesPipeline(FilesPipeline):
-    """Abstract pipeline that implement the image thumbnail generation logic"""
+    """Custom Image Abstract pipeline that implement the image thumbnail generation logic"""
 
     MEDIA_NAME = 'image'
 
@@ -465,21 +414,7 @@ class ImagesPipeline(FilesPipeline):
 
     @classmethod
     def from_settings(cls, settings):
-        w3s_store = cls.STORE_SCHEMES['w3s']
-        w3s_store.API_KEY = settings['W3S_API_KEY']
-
-        lh_store = cls.STORE_SCHEMES['lh']
-        lh_store.API_KEY = settings['LH_API_KEY']
-
-        es_store = cls.STORE_SCHEMES['es']
-        es_store.API_KEY = settings['ES_API_KEY']
-
-        ms_store = cls.STORE_SCHEMES['ms']
-        ms_store.API_KEY = settings['MS_API_KEY']
-
-        pn_store = cls.STORE_SCHEMES['pn']
-        pn_store.API_KEY = settings['PN_JWT_TOKEN']
-
+        cls.init_settings(settings)
         store_uri = settings['IMAGES_STORE']
         return cls(store_uri, settings=settings)
 
@@ -493,7 +428,7 @@ class ImagesPipeline(FilesPipeline):
             self.store.persist_file(
                 path, buf, info, meta={'width': width, 'height': height}, headers={'Content-Type': 'image/jpeg'}
             )
-        return self.store.cids[path]
+        return self.store.CIDS[path]
 
     def get_images(self, response, request, info, *, item=None):
         path = self.file_path(request, response=response, info=info, item=item)

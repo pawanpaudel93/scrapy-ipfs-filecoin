@@ -134,3 +134,11 @@ class MoralisClient(Client):
 
     def get_url(self, cid):
         return f"https://ipfs.moralis.io:2053/ipfs/{cid}"
+
+
+class S3Client(Client):
+    def __init__(self, ipfs_url_format=None) -> None:
+        self.ipfs_url_format = ipfs_url_format
+
+    def get_url(self, cid):
+        return self.ipfs_url_format.format(cid=cid) if self.ipfs_url_format else f"https://w3s.link/ipfs/{cid}"
