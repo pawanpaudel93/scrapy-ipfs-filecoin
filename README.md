@@ -77,7 +77,9 @@ pip install scrapy-ipfs-filecoin
  IMAGES_STORE = 'lh://images' # For LightHouse
  IMAGES_STORE = 'pn://images' # For Pinata
  IMAGES_STORE = 'ms://images' # For Moralis
- IMAGES_STORE = "s3://bucket-name/images/"  # For Filebase or other s3 compatible services
+  # For Filebase or other s3 compatible services
+  # Here bucket-name can be your bucket name created and folder-name can be a scraping specific folder to store your files
+ IMAGES_STORE = "s3://bucket-name/folder-name/images/"
  
  # For FilesPipeline
  FILES_STORE = 'w3s://files' # For Web3Storage
@@ -85,7 +87,9 @@ pip install scrapy-ipfs-filecoin
  FILES_STORE = 'lh://files' # For LightHouse
  FILES_STORE = 'es://files' # For Pinata
  FILES_STORE = 'pn://files' # For Moralis
- FILES_STORE = "s3://bucket-name/files/"  # For Filebase or other s3 compatible services
+  # For Filebase or other s3 compatible services
+  # Here bucket-name can be your bucket name created and folder-name can be a scraping specific folder to store your files
+ FILES_STORE = "s3://bucket-name/folder-name/files/"
  ```
 
  For more info regarding ImagesPipeline and FilesPipline. [See here](https://docs.scrapy.org/en/latest/topics/media-pipeline.html)
@@ -173,9 +177,11 @@ pip install scrapy-ipfs-filecoin
  S3_ENDPOINT_URL = "https://s3.filebase.com"
  S3_IPFS_URL_FORMAT = "https://ipfs.filebase.io/ipfs/{cid}"
 
+  # Here bucket-name can be your bucket name created and folder-name can be a scraping specific folder to store your files
+
  FEEDS = {
-  "s3://bucket-name/foldername/%(name)s_%(time)s.json": {"format": "json"},
-  "s3://bucket-name/foldername/%(name)s_%(time)s.csv": {"format": "csv"},
+  "s3://bucket-name/folder-name/%(name)s_%(time)s.json": {"format": "json"},
+  "s3://bucket-name/folder-name/%(name)s_%(time)s.csv": {"format": "csv"},
  }
  ```
 
